@@ -1,5 +1,7 @@
 package hardroq.networking;
 
+import hardroq.networking.TCPRoQ.Builder;
+
 import java.io.OutputStream;
 import java.net.Socket;
 import java.util.Random;
@@ -8,11 +10,13 @@ public class TCPRoQ {
 	//Parameters
 	private final String host;
 	private final int port;
-	private final int timeout;
-	private final int datasize;
-	private final int burstcount;
+	private final String header;
+	private final String footer;
 	
 	//Internals
+	private int datasize;
+	private int timeout;
+	private int RTT;
 	private final Object simpleLock = new Object();
 	private final Random random = new Random();
 	private Thread workerThread;
@@ -22,9 +26,10 @@ public class TCPRoQ {
 	private TCPRoQ (Builder builder) {
 		host = builder.host;
 		port = builder.port;
-		timeout = builder.timeout;
+		RTT = builder.RTT;
 		datasize = builder.datasize;
-		burstcount = builder.burstcount;
+		header = builder.header;
+		footer = builder.footer;
 	}
 	
 	public void InitiateAttack() {
@@ -83,9 +88,14 @@ public class TCPRoQ {
 		public Builder() {}
 		private String host = "127.0.0.1";
 		private int port = 80;
-		private int timeout = 1;
+		private int RTT = 150;
 		private int datasize = 16 * 1024;
-		private int burstcount = 100;
+		private String header = "";
+		private String footer = "";
+		
+		public TCPRoQ build() {
+			return new TCPRoQ(this);
+		}
 		
 		public Builder host(String h) {
 			host = h;
@@ -97,8 +107,8 @@ public class TCPRoQ {
 			return this;
 		}
 		
-		public Builder timeout (int t) {
-			timeout = t;
+		public Builder RTT (int t) {
+			RTT = t;
 			return this;
 		}
 		
@@ -106,14 +116,15 @@ public class TCPRoQ {
 			datasize = d;
 			return this;
 		}
-		
-		public Builder burstcount (int b) {
-			burstcount = b;
+
+		public Builder header(String h) {
+			header = h;
 			return this;
 		}
 		
-		public TCPRoQ build() {
-			return new TCPRoQ(this);
+		public Builder footer(String f) {
+			footer = f;
+			return this;
 		}
 	}
 }
