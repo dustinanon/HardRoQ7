@@ -9,7 +9,7 @@ import java.net.Socket;
 
 public class Ping {
 	//Constants
-	public static final String httpPingPacket = "GET / HTTP/1.1\r\n\r\n";
+	public static final String httpPingPacket = "GET / HTTP/1.0\r\n\r\n";
 	
 	//fields
 	public static Socket socket;
@@ -26,12 +26,14 @@ public class Ping {
 		in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 		
 		long start;
-		long RTT;
+		long RTT = 0;
 		
 		start = System.currentTimeMillis();
 		printer.write(httpPingPacket);
+		printer.flush();
 		
-		in.readLine();
+		//final byte[] buffer = new byte[1];
+		final String line = in.readLine();
 		RTT = System.currentTimeMillis() - start;
 		
 		return (int)RTT;
