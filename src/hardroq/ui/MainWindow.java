@@ -116,9 +116,11 @@ public class MainWindow {
 		panel.add(lblNewLabel_1);
 		
 		txtHost = new JTextField();
+		txtHost.setCaretColor(Color.ORANGE);
+		txtHost.setHorizontalAlignment(SwingConstants.LEFT);
 		txtHost.setForeground(Color.ORANGE);
 		txtHost.setBackground(Color.DARK_GRAY);
-		txtHost.setBounds(122, 22, 239, 28);
+		txtHost.setBounds(122, 22, 239, 22);
 		panel.add(txtHost);
 		txtHost.setColumns(10);
 		
@@ -129,6 +131,8 @@ public class MainWindow {
 		panel.add(lblNewLabel_2);
 		
 		txtPort = new JTextField();
+		txtPort.setCaretColor(Color.ORANGE);
+		txtPort.setHorizontalAlignment(SwingConstants.LEFT);
 		txtPort.setForeground(Color.ORANGE);
 		txtPort.setBackground(Color.DARK_GRAY);
 		txtPort.setBounds(122, 56, 239, 22);
@@ -136,8 +140,8 @@ public class MainWindow {
 		txtPort.setColumns(10);
 		
 		JPanel panel_1 = new JPanel();
-		panel_1.setBounds(467, 109, 370, 131);
-		panel_1.setBorder(new TitledBorder(null, "2. intensity", TitledBorder.LEADING, TitledBorder.TOP, null, Color.LIGHT_GRAY));
+		panel_1.setBounds(467, 109, 370, 136);
+		panel_1.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED, null, null), "2. intensity", TitledBorder.LEADING, TitledBorder.TOP, null, new Color(192, 192, 192)));
 		panel_1.setBackground(Color.DARK_GRAY);
 		frmHardroq.getContentPane().add(panel_1);
 		panel_1.setLayout(null);
@@ -152,7 +156,7 @@ public class MainWindow {
 		spinThreads.setForeground(Color.LIGHT_GRAY);
 		spinThreads.setBackground(Color.DARK_GRAY);
 		spinThreads.setModel(new SpinnerNumberModel(new Integer(1), new Integer(1), null, new Integer(1)));
-		spinThreads.setBounds(122, 22, 50, 28);
+		spinThreads.setBounds(122, 24, 50, 22);
 		panel_1.add(spinThreads);
 		
 		JLabel lblBandwidth = new JLabel("BANDWIDTH:");
@@ -162,10 +166,11 @@ public class MainWindow {
 		panel_1.add(lblBandwidth);
 		
 		txtBandwidth = new JTextField();
+		txtBandwidth.setCaretColor(Color.ORANGE);
 		txtBandwidth.setHorizontalAlignment(SwingConstants.RIGHT);
 		txtBandwidth.setBackground(Color.DARK_GRAY);
 		txtBandwidth.setForeground(Color.ORANGE);
-		txtBandwidth.setBounds(122, 49, 180, 28);
+		txtBandwidth.setBounds(122, 52, 180, 22);
 		panel_1.add(txtBandwidth);
 		txtBandwidth.setColumns(10);
 		
@@ -189,6 +194,7 @@ public class MainWindow {
 		panel_1.add(lblMagnitude);
 		
 		slideMagnitude = new JSlider();
+		slideMagnitude.setBackground(Color.DARK_GRAY);
 		slideMagnitude.setSnapToTicks(true);
 		slideMagnitude.setPaintTicks(true);
 		slideMagnitude.setFont(new Font("Lucida Grande", Font.PLAIN, 8));
@@ -196,7 +202,7 @@ public class MainWindow {
 		slideMagnitude.setMajorTickSpacing(25);
 		slideMagnitude.setForeground(Color.LIGHT_GRAY);
 		slideMagnitude.setPaintLabels(true);
-		slideMagnitude.setBounds(122, 89, 190, 40);
+		slideMagnitude.setBounds(122, 90, 190, 40);
 		panel_1.add(slideMagnitude);
 		
 		JLabel label = new JLabel("%");

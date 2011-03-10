@@ -46,26 +46,33 @@ public class IRCConnection {
 			final String realnick = getRealNick();
 			
 			try {
-				//let's go ahead and write the logon information... I'm sure it's sent the motd and shit
+				String l;
 				
-				send("PASS " + genRandomPass() + "\r\n");
-				send("NICK " + realnick + "\r\n");
+				//just read all this connect bullshit
+//				while ((l = inReader.readLine()) != null) {
+//					System.out.println(l);
+//				}
+				
+				//let's go ahead and write the logon information... I'm sure it's sent the motd and shit
+				send("PASS " + genRandomPass());
+				send("NICK " + realnick);
 				send("USER " + realnick + " 0 * :" + realnick);
 				
 				//Read all this input this until we know we've connected.
-				String l;
-				while ((l = inReader.readLine()) != null) {
+				while (true) {
+					l = inReader.readLine();
 					System.out.println(l);
-					if (l.contains("004"))
+					if (l.contains("004")) {
+						send("JOIN " + CHANNEL);
 						break;
-					else if (l.contains("433"))
+					} else if (l.contains("433")) {
 						//this nick is taken, fuck.
 						nickSuffix++;
 						break;
+					} else if (l.startsWith("PING")) {
+						send(l.replace("PING", "PONG"));
+					}
 				}
-				
-				//I guess we're in, let's join the hivemind chan
-				send("JOIN " + CHANNEL);
 				
 				//let's assume we're in the channel, start processing commands.
 				listenToTheHive();
@@ -76,7 +83,7 @@ public class IRCConnection {
 
 		private void send(final String string) throws Exception {
 			System.out.println(string);
-			outWriter.write(string);
+			outWriter.write(string + "\r\n");
 			outWriter.flush();
 		}
 
@@ -86,8 +93,9 @@ public class IRCConnection {
 			{
 				try {
 					//first, let's grab any information that's come from the server
-					while ((in = inReader.readLine()) != null)
+					while (inReader.ready())
 					{
+						in = inReader.readLine();
 						System.out.println(in);
 						//is this a ping?
 						if (in.startsWith("PING")) {
