@@ -29,6 +29,8 @@ import javax.swing.border.TitledBorder;
 import org.eclipse.wb.swing.FocusTraversalOnArray;
 
 public class MainWindow {
+	
+	private static final String STATUS_STRING = "<html><body>Currently Attacking: %s<br>Packets Sent: %s<br>Current RTT: %s<br>RTT Delta: %s</body></html>";
 
 	private JFrame frmHardroq;
 	private JTextField txtHost;
@@ -38,7 +40,9 @@ public class MainWindow {
 	private JSlider slideMagnitude;
 	private JButton btnSolo;
 	private JButton btnHivemind;
+	private JLabel lblStatus;
 	private boolean attacking = false;
+	private Thread statusThread;
 	
 	/**
 	 * Launch the application.
@@ -61,6 +65,8 @@ public class MainWindow {
 	 */
 	public MainWindow() {
 		initialize();
+		statusThread = new Thread(statusRunner, "Status Updater");
+		statusThread.start();
 	}
 
 	/**
@@ -80,6 +86,12 @@ public class MainWindow {
 				connectToHivemind();
 			}
 		});
+		
+		lblStatus = new JLabel("");
+		lblStatus.setVerticalAlignment(SwingConstants.TOP);
+		lblStatus.setForeground(Color.LIGHT_GRAY);
+		lblStatus.setBounds(26, 451, 263, 109);
+		frmHardroq.getContentPane().add(lblStatus);
 		btnHivemind.setBounds(465, 258, 372, 29);
 		frmHardroq.getContentPane().add(btnHivemind);
 		
@@ -289,4 +301,29 @@ public class MainWindow {
 		JOptionPane.showMessageDialog(frmHardroq, "Please set your bandwidth and verify your intensity settings.");
 		return false;
 	}
+	
+	private Runnable statusRunner = new Runnable() {
+		@Override
+		public void run() {
+			while (true)
+			{
+				if (AttackController.getInstance().isAttacking())
+				{
+					final String currentRTT = String.valueOf(AttackController.getInstance().getCurrentRTT());
+					final String deltaRTT = String.valueOf(AttackController.getInstance().getDeltaRTT() * 100f) + "%";
+					final String cAttack = String.valueOf(AttackController.getInstance().isAttacking());
+					final String pSent = String.valueOf(AttackController.getInstance().getPacketCount());
+					lblStatus.setText(String.format(STATUS_STRING, cAttack, pSent, currentRTT, deltaRTT));
+				} else {
+					lblStatus.setText("Currently Attacking: false");
+				}
+				
+				try {
+					Thread.sleep(500);
+				} catch (InterruptedException e) {
+					System.out.println(e.getMessage());
+				}
+			}
+		}
+	};
 }

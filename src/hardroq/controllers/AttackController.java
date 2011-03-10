@@ -19,6 +19,7 @@ public class AttackController {
 	private String host;
 	private int port;
 	private int RTT = 0;
+	private int startingRTT = 0;
 	private String attackHeader = "";
 	private String attackFooter = "";
 	private float aggressionIndex;
@@ -38,6 +39,8 @@ public class AttackController {
 			} catch (InterruptedException e) {
 				System.out.println(e.getMessage());
 			}
+		
+		startingRTT = RTT;	
 		
 		attackers = new TCPRoQ[numThreads];
 		for (int i = numThreads; --i >= 0;) {
@@ -82,6 +85,18 @@ public class AttackController {
 		}
 	};
 	
+	public long getPacketCount() {
+		long sum = 0;
+		if (attackers != null && attackers.length > 0)
+			for (TCPRoQ a : attackers)
+				sum += a.getPacketsSent();
+		
+		return sum;
+	}
+	
+	public int getCurrentRTT() {
+		return RTT;
+	}
 	
 	public void setAttackHeader(final String h) {
 		attackHeader = h;
@@ -111,5 +126,13 @@ public class AttackController {
 	
 	public void setNumThreads(final int t) {
 		numThreads = t;
+	}
+
+	public float getDeltaRTT() {
+		return (float) RTT / (float) startingRTT;
+	}
+
+	public boolean isAttacking() {
+		return attacking;
 	}
 }
