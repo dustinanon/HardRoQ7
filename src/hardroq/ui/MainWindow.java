@@ -7,6 +7,7 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.EventQueue;
 import java.awt.Font;
+import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -220,6 +221,7 @@ public class MainWindow {
 		txtpnHardroqIsA.setContentType("text/html");
 		txtpnHardroqIsA.setText("<html><head></head><body>\n<p>HardRoQ7 is a Reduction of Quality / Denial of Service testing tool designed to cause maximum damage to the target, while minimizing attacker exposure.  The attack works by sending bulk packages of legitimate requests at regular intervals in order to exploit Application Layer (OSI Layer 7) Congestion Avoidance algorithms.  Poorly designed congestion avoidance algorithms at the application layer, as well as high magnitude attacks, can also trigger Transport Layer (OSI Layer 4) Congestion Algorithms to trigger as well.\n</p>\n<p>\nUsing HardRoQ7 is relatively straightforward.  First set the <i>target</i> of the attack.  You can use either a <b>URL</b> or an <b>IP</b> address as the target host.  The <b>port</b> may also be specified, or will be chosen as the default port derived from the protocol supplied in the URL.\n</p>\n<p>\nNext, be sure to set your <i>intensity</i> configuration.  The number of <b>threads</b> should be equal to the number of cores running on your system (or double that if you use Intel Hyperthreading).  Next, you should supply the amount of <b>bandwidth</b> to be utilized.  This is <b>upload bandwidth</b>, not download bandwidth.  If you are unsure of your upload bandwidth, you can test it at <a href=\"http://www.speedtest.net\" target=\"_new\">speedtest.net</a>.  The last intensity setting to configure is the <b>magnitude</b>.  This is a % of the available bandwidth that should be utilized in the attack.\n</p>\n<p>\n<u><b>IMPORTANT:  A HIGHER MAGNITUDE VALUE EXPOSES MORE RISK OF BEING DISCOVERED BY THE TARGET.  A LOWER MAGNITUDE VALUE DECREASES ATTACK EFFECTIVENESS.<b></i>\n</p>\n<p>\nFinally, you can choose to either attack by yourself, or join the HIVEMIND for coordinated attacks.  Everybody knows what this does.<br><br>\n\nEnjoy.<br>\n-dustin\n</body></html>\n");
 		txtpnHardroqIsA.setBounds(467, 405, 372, 131);
+		txtpnHardroqIsA.setCaretPosition(0);
 		slider.setBounds(465, 330, 372, 231);
 		frmHardroq.getContentPane().add(slider);
 		frmHardroq.getContentPane().setFocusTraversalPolicy(new FocusTraversalOnArray(new Component[]{txtHost, txtPort, spinThreads, txtBandwidth, slideMagnitude, btnHivemind}));
