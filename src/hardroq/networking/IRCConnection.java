@@ -26,7 +26,7 @@ public class IRCConnection {
 		NICK = nick;
 		CHANNEL = channel;
 		
-		IRC_THREAD = new Thread(InitiateLogon);
+		IRC_THREAD = new Thread(InitiateLogon, "IRC Thread");
 		IRC_THREAD.start();
 	}
 

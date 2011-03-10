@@ -86,7 +86,7 @@ public class MainWindow {
 		JLabel lblNewLabel = new JLabel("");
 		lblNewLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		lblNewLabel.setBounds(13, 6, 440, 530);
-		lblNewLabel.setIcon(new ImageIcon("/Users/dustinewan/Documents/workspace/HardRoQ/images/splash2.gif"));
+		lblNewLabel.setIcon(new ImageIcon(MainWindow.class.getResource("/hardroq/ui/resources/splash2.gif")));
 		frmHardroq.getContentPane().add(lblNewLabel);
 		
 		JPanel panel = new JPanel();
