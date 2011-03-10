@@ -4,6 +4,7 @@ import hardroq.controllers.HivemindController;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
@@ -46,14 +47,15 @@ public class IRCConnection {
 			
 			try {
 				//let's go ahead and write the logon information... I'm sure it's sent the motd and shit
-				outWriter.write("PASS " + genRandomPass() + "\r\n");
-				outWriter.write("NICK " + realnick + "\r\n");
-				outWriter.write("USER " + realnick + "8 * :" + realnick);
-				outWriter.flush();
+				
+				send("PASS " + genRandomPass() + "\r\n");
+				send("NICK " + realnick + "\r\n");
+				send("USER " + realnick + " 0 * :" + realnick);
 				
 				//Read all this input this until we know we've connected.
 				String l;
 				while ((l = inReader.readLine()) != null) {
+					System.out.println(l);
 					if (l.contains("004"))
 						break;
 					else if (l.contains("433"))
@@ -63,13 +65,19 @@ public class IRCConnection {
 				}
 				
 				//I guess we're in, let's join the hivemind chan
-				outWriter.write("JOIN " + CHANNEL);
+				send("JOIN " + CHANNEL);
 				
 				//let's assume we're in the channel, start processing commands.
 				listenToTheHive();
 			} catch(Exception e) {
 				System.out.println(e.getMessage());
 			}
+		}
+
+		private void send(final String string) throws Exception {
+			System.out.println(string);
+			outWriter.write(string);
+			outWriter.flush();
 		}
 
 		private void listenToTheHive() {
@@ -80,9 +88,10 @@ public class IRCConnection {
 					//first, let's grab any information that's come from the server
 					while ((in = inReader.readLine()) != null)
 					{
+						System.out.println(in);
 						//is this a ping?
 						if (in.startsWith("PING")) {
-							outWriter.write(in.replace("PING", "PONG"));
+							send(in.replace("PING", "PONG"));
 							break;
 						} else if (in.startsWith("PRIVMSG")) {
 							//ooh, somebody is saying something... is it important?
