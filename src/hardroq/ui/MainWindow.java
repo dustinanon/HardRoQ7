@@ -7,9 +7,9 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.EventQueue;
 import java.awt.Font;
-import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -254,12 +254,17 @@ public class MainWindow {
 			
 			//let's just hardcode this shit for now...
 			String h = "";
-			h += "GET / HTTP/1.1\r\n";
+			h += "GET _targeturl_ HTTP/1.1\r\n";
 			h += "Host: " + host + ":" + String.valueOf(port) + "\r\n";
 			h += "Connection: keep-alive\r\n";
+			h += "Cache-Control: no-cache, must-revalidate\r\n";
 			h += "\r\n";
 			
 			AttackController.getInstance().setAttackHeader(h);
+			
+			//for now let's just hardcode some shit
+			File resList = new File(System.getProperty("user.dir") + "/resources.list");
+			AttackController.getInstance().LoadResourceList(resList);
 			
 			if(setIntensity()) AttackController.getInstance().Attack();
 			

