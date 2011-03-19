@@ -48,7 +48,7 @@ public class MainWindow {
 	/**
 	 * Launch the application.
 	 */
-	public static void main(String[] args) {
+	public static void main(final String[] args) {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
@@ -286,7 +286,7 @@ public class MainWindow {
 				attacking = true;
 				//hardcode this for now
 				HivemindController.getInstance().setServer("tiny.anonops.in");
-				HivemindController.getInstance().setChannel("#opnewblood");
+				HivemindController.getInstance().setChannel("#oplibya-roq");
 				HivemindController.getInstance().setNick("HardRoQTest");
 				
 				HivemindController.getInstance().connectToHivemind();	
@@ -318,15 +318,20 @@ public class MainWindow {
 	private Runnable statusRunner = new Runnable() {
 		@Override
 		public void run() {
+		    final AttackController ac = AttackController.getInstance();
+		    
 			while (true)
 			{
 				if (AttackController.getInstance().isAttacking())
 				{
-					final String currentRTT = String.valueOf(AttackController.getInstance().getCurrentRTT());
-					final String deltaRTT = String.valueOf(AttackController.getInstance().getDeltaRTT() * 100f) + "%";
-					final String cAttack = String.valueOf(AttackController.getInstance().isAttacking());
-					final String pSent = String.valueOf(AttackController.getInstance().getPacketCount());
+					final String currentRTT = String.valueOf(ac.getCurrentRTT());
+					final String deltaRTT = String.valueOf(ac.getDeltaRTT() * 100f) + "%";
+					final String cAttack = String.valueOf(ac.isAttacking());
+					final String pSent = String.valueOf(ac.getPacketCount());
 					lblStatus.setText(String.format(STATUS_STRING, cAttack, pSent, currentRTT, deltaRTT));
+					
+					txtHost.setText(ac.getHost());
+					txtPort.setText(String.valueOf(ac.getPort()));
 				} else {
 					lblStatus.setText("Currently Attacking: false");
 				}

