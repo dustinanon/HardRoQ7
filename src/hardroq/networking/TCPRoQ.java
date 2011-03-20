@@ -34,7 +34,7 @@ public class TCPRoQ {
 
 	//Internals
 	volatile private static int RTT;
-	private boolean attacking = false;
+	volatile private static boolean attacking = false;
 	
 	private TCPRoQ (final Builder builder) {
 		host = builder.host;

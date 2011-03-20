@@ -29,6 +29,8 @@ public class IRCConnection {
 		
 		IRC_THREAD = new Thread(InitiateLogon, "IRC Thread");
 		IRC_THREAD.start();
+		
+		nickSuffix = random.nextInt(9999);
 	}
 
 
@@ -43,14 +45,14 @@ public class IRCConnection {
 				System.out.println(e.getMessage());
 			}
 			
-			final String realnick = getRealNick();
-			
 			try {
 				String l;
 				
 				boolean connected = false;
 				while (!connected) {
     				//let's go ahead and write the logon information... I'm sure it's sent the motd and shit
+				    final String realnick = getRealNick();
+				    
     				send("PASS " + genRandomPass());
     				send("NICK " + realnick);
     				send("USER " + realnick + " 8 * :" + realnick);

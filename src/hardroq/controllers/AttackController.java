@@ -6,6 +6,7 @@ import hardroq.networking.TCPRoQ;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
@@ -37,6 +38,7 @@ public class AttackController {
 	private Thread pingThread = new Thread();
 	private boolean attacking = false;
 	private String[] resources = new String[0];
+	private int resourceCount = 0;
 	
 	public void Attack() {
 	    //let's strip protocol off of the hostname
@@ -53,6 +55,9 @@ public class AttackController {
 			} catch (InterruptedException e) {
 				System.out.println(e.getMessage());
 			}
+		
+		if (RTT == -1)
+		    return;
 		
 		startingRTT = RTT;	
 		
@@ -88,6 +93,15 @@ public class AttackController {
 	private Runnable pinger = new Runnable() {
 		@Override
 		public void run() {
+		    //so this method sucks, but fucking whatever
+		    try {
+                RTT = Ping.HTTPPing(host, port);
+            } catch (IOException e1) {
+                //can't resolve host, or is down or some bullshit
+                attacking = false;
+                RTT = -1;
+            }
+		    
 			while (attacking) {
 				try {
 					RTT = Ping.HTTPPing(host, port);
@@ -143,6 +157,11 @@ public class AttackController {
 		//trim the crap
 		resources = new String[--count];
 		System.arraycopy(arr, 0, resources, 0, count);
+		resourceCount = count;
+	}
+	
+	public int getResourceCount() {
+	    return resourceCount;  
 	}
 	
 	public long getPacketCount() {
@@ -198,7 +217,10 @@ public class AttackController {
 	}
 
     public String getRandomResource() {
-        return resources[random.nextInt(resources.length)];
+        if (resourceCount > 0)
+            return resources[random.nextInt(resourceCount)];
+        
+        return "/";
     }
 
     public String getHost() {

